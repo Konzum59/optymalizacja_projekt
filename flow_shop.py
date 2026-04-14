@@ -86,19 +86,17 @@ if __name__ == "__main__":
     rnd = RandomNumberGenerator(831764)
 
     number_of_items=9
-    number_of_machines=9
+    number_of_machines=7
     items = np.array([[rnd.nextInt(1, 35) for i in range(number_of_machines)] for j in range(number_of_items)])
 
-    #print(items)
-    #print(best[0], best[1])
+
     solution=ant_colony_alg(items, 50, 30, 0.5, 1.0, 0.2, 20)
     print(solution[1])
 
+    #bruteforce pisany na kolanie, tylko tak do sprawdzania
     b = len(items)
-    brutelist=[0,1,2,3,4,5,6,7,8]
-    #print(brutelist)
+    brutelist=list(range(b))
     bruteforce=[list(p) for p in itertools.permutations(brutelist)]
-    #print(bruteforce)
     brute_best=math.inf
     for list in bruteforce:
         cmax=count_time(items,list)
