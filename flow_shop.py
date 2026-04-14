@@ -1,3 +1,5 @@
+import random
+import itertools
 from RandomNumberGenerator import RandomNumberGenerator
 import numpy as np
 import math
@@ -14,17 +16,93 @@ def count_time(array, permutation):
             left = processing_times_array[row-1][col]
             top = processing_times_array[row][col-1]
             processing_times_array[row][col] += max(top,left)
-    print(processing_times_array)
     Cmax=processing_times_array.max()
     return Cmax
+
+def ant_colony_alg(processing_times, n_ants, iterations, pheromone_efect, heuristic_efect, evaporation, pheromone_reinforcement):
+    n=len(processing_times)
+    pheromones = [[1.0]* n for _ in range(n)]
+    best_perm=None
+    best_cmax = math.inf
+    for iter in range(iterations):
+        solutions=[]
+        for ant in range(n_ants):
+            perm=[]
+            unvisited = list(range(n))
+            start = random.choice(unvisited)
+            perm.append(start)
+            unvisited.remove(start)
+
+            while unvisited:
+
+                current = perm[-1]
+                probs=[]
+                for next_job in unvisited:
+                    heuristic= 1.0/(processing_times[next_job][0]+processing_times[next_job][-1])
+
+                    prob=((pheromones[current][next_job]**pheromone_efect)+(heuristic**heuristic_efect))
+                    probs.append((next_job, prob))
+
+                total = sum(p for _, p in probs)
+                probs = [(job , p/total) for job, p in probs]
+                cummulative_value=0
+                chosen = None
+                gambling=random.random()
+                for job,p in probs:
+                    cummulative_value+=p
+                    if gambling<=cummulative_value:
+                        chosen=job
+                        break
+
+                perm.append(chosen)
+
+                unvisited.remove(chosen)
+            cmax=count_time(processing_times, perm)
+            solutions.append((perm, cmax))
+            if cmax<best_cmax:
+                best_perm=perm[:]
+                best_cmax=cmax
+
+        for i in range(n):
+            for j in range(n):
+                pheromones[i][j]*=(1-evaporation)
+
+        best_in_iter=min(solutions, key=lambda x:x[1])
+        for i in range(n-1):
+            a= best_in_iter[0][i]
+            b= best_in_iter[0][i+1]
+            pheromones[a][b]+=pheromone_reinforcement/best_in_iter[1]
+            #print(pheromone_reinforcement/best_in_iter[1])
+            #print(unvisited)
+    return best_perm, best_cmax
+
+
+
+
+
+
+
 if __name__ == "__main__":
     rnd = RandomNumberGenerator(831764)
 
-    number_of_items=4
-    number_of_machines=3
+    number_of_items=9
+    number_of_machines=9
     items = np.array([[rnd.nextInt(1, 35) for i in range(number_of_machines)] for j in range(number_of_items)])
-    new_order = [2, 0, 1, 3]
-    best = math.inf ,new_order
-    best = [min( best[0] , count_time(items, new_order)), new_order]
-    print(items)
-    print(best[0], best[1])
+
+    #print(items)
+    #print(best[0], best[1])
+    solution=ant_colony_alg(items, 50, 30, 0.5, 1.0, 0.2, 20)
+    print(solution[1])
+
+    b = len(items)
+    brutelist=[0,1,2,3,4,5,6,7,8]
+    #print(brutelist)
+    bruteforce=[list(p) for p in itertools.permutations(brutelist)]
+    #print(bruteforce)
+    brute_best=math.inf
+    for list in bruteforce:
+        cmax=count_time(items,list)
+        if brute_best>cmax:
+            brute_best=cmax
+    print("brute best: ", brute_best)
+    print("ant best: ", solution[1])
