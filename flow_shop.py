@@ -5,7 +5,7 @@ import numpy as np
 import math
 
 def count_time(array, permutation):
-    processing_times_array=array[permutation]
+    processing_times_array=array[permutation].copy()
     for row in range(1, number_of_items):
         processing_times_array[row][0]+=processing_times_array[row-1][0]
     for col in range(1, number_of_machines):
@@ -40,7 +40,7 @@ def ant_colony_alg(processing_times, n_ants, iterations, pheromone_efect, heuris
                 for next_job in unvisited:
                     heuristic= 1.0/(processing_times[next_job][0]+processing_times[next_job][-1])
 
-                    prob=((pheromones[current][next_job]**pheromone_efect)+(heuristic**heuristic_efect))
+                    prob=((pheromones[current][next_job]**pheromone_efect)*(heuristic**heuristic_efect))
                     probs.append((next_job, prob))
 
                 total = sum(p for _, p in probs)
@@ -67,6 +67,7 @@ def ant_colony_alg(processing_times, n_ants, iterations, pheromone_efect, heuris
             for j in range(n):
                 pheromones[i][j]*=(1-evaporation)
 
+
         best_in_iter=min(solutions, key=lambda x:x[1])
         for i in range(n-1):
             a= best_in_iter[0][i]
@@ -83,17 +84,18 @@ def ant_colony_alg(processing_times, n_ants, iterations, pheromone_efect, heuris
 
 
 if __name__ == "__main__":
-    rnd = RandomNumberGenerator(831764)
+    rnd = RandomNumberGenerator(735864)
 
-    number_of_items=9
-    number_of_machines=7
+    number_of_items=8
+    number_of_machines=8
     items = np.array([[rnd.nextInt(1, 35) for i in range(number_of_machines)] for j in range(number_of_items)])
 
 
-    solution=ant_colony_alg(items, 50, 30, 0.5, 1.0, 0.2, 20)
+
+
+    solution=ant_colony_alg(items, 100, 40, 0.5, 1.0, 0.15, 20)
     print(solution[1])
 
-    #bruteforce pisany na kolanie, tylko tak do sprawdzania
     b = len(items)
     brutelist=list(range(b))
     bruteforce=[list(p) for p in itertools.permutations(brutelist)]
