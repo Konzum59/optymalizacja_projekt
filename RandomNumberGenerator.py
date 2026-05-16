@@ -2,7 +2,7 @@ import math
 
 
 class RandomNumberGenerator:
-    def __init__(self, seedVaule=None):
+    def __init__(self, seedVaule: int):
         self.__seed = seedVaule
 
     def nextInt(self, low, high):

@@ -36,7 +36,7 @@ def ant_colony_alg(
     for iter in range(iterations):
         solutions = []
         for ant in range(n_ants):
-            perm = []
+            perm: list[int] = []
             unvisited = list(range(n))
             start = random.choice(unvisited)
             perm.append(start)
@@ -44,7 +44,7 @@ def ant_colony_alg(
 
             while unvisited:
                 current = perm[-1]
-                probs = []
+                probs: list[tuple[int, float]] = []
                 for next_job in unvisited:
                     heuristic = 1.0 / (
                         processing_times[next_job][0] + processing_times[next_job][-1]
@@ -66,9 +66,10 @@ def ant_colony_alg(
                         chosen = job
                         break
 
-                perm.append(chosen)
+                if chosen:
+                    perm.append(chosen)
+                    unvisited.remove(chosen)
 
-                unvisited.remove(chosen)
             cmax = count_time(processing_times, perm)
             solutions.append((perm, cmax))
             if cmax < best_cmax:
@@ -108,8 +109,8 @@ if __name__ == "__main__":
     brutelist = list(range(b))
     bruteforce = [list(p) for p in itertools.permutations(brutelist)]
     brute_best = math.inf
-    for list in bruteforce:
-        cmax = count_time(items, list)
+    for permutation in bruteforce:
+        cmax = count_time(items, permutation)
         if brute_best > cmax:
             brute_best = cmax
     print("brute best: ", brute_best)
