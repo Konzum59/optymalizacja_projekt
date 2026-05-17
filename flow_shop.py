@@ -33,9 +33,9 @@ def ant_colony_alg(
     pheromones = [[1.0] * n for _ in range(n)]
     best_perm = None
     best_cmax = math.inf
-    for iter in range(iterations):
+    for _ in range(iterations):
         solutions = []
-        for ant in range(n_ants):
+        for _ in range(n_ants):
             perm: list[int] = []
             unvisited = list(range(n))
             start = random.choice(unvisited)
@@ -97,8 +97,8 @@ if __name__ == "__main__":
     number_of_machines = 8
     items = np.array(
         [
-            [rnd.nextInt(1, 35) for i in range(number_of_machines)]
-            for j in range(number_of_items)
+            [rnd.nextInt(1, 35) for _ in range(number_of_machines)]
+            for _ in range(number_of_items)
         ]
     )
 
