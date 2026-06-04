@@ -4,30 +4,42 @@ from RandomNumberGenerator import RandomNumberGenerator
 import numpy as np
 import math
 
+NUMBER_OF_JOBS = 8
+NUMBER_OF_MACHINES = 8
 
-def count_time(array, permutation):
-    processing_times_array = array[permutation].copy()
-    for row in range(1, number_of_items):
-        processing_times_array[row][0] += processing_times_array[row - 1][0]
-    for col in range(1, number_of_machines):
-        processing_times_array[0][col] += processing_times_array[0][col - 1]
-    for row in range(1, number_of_items):
-        for col in range(1, number_of_machines):
-            left = processing_times_array[row - 1][col]
-            top = processing_times_array[row][col - 1]
-            processing_times_array[row][col] += max(top, left)
-    Cmax = processing_times_array.max()
+
+def count_time(
+    processing_times: np.ndarray[tuple[int, int], np.dtype[np.int_]],
+    permutation: list[int],
+):
+    """
+    Args:
+        processing_times: A 2D array representing processing times, where each row represents a single job
+            and each column represents a successive machine. Specifically, `processing_times[i][j]` is the
+            time required to process job `i` on machine `j`.
+    """
+    scheduled_times = processing_times[permutation].copy()
+    for row in range(1, NUMBER_OF_JOBS):
+        scheduled_times[row][0] += scheduled_times[row - 1][0]
+    for col in range(1, NUMBER_OF_MACHINES):
+        scheduled_times[0][col] += scheduled_times[0][col - 1]
+    for row in range(1, NUMBER_OF_JOBS):
+        for col in range(1, NUMBER_OF_MACHINES):
+            left = scheduled_times[row - 1][col]
+            top = scheduled_times[row][col - 1]
+            scheduled_times[row][col] += max(top, left)
+    Cmax = scheduled_times.max()
     return Cmax
 
 
 def ant_colony_alg(
-    processing_times,
-    n_ants,
-    iterations,
-    pheromone_efect,
-    heuristic_efect,
-    evaporation,
-    pheromone_reinforcement,
+    processing_times: np.typing.NDArray[np.int_],
+    n_ants: int,
+    iterations: int,
+    pheromone_efect: float,
+    heuristic_efect: float,
+    evaporation: float,
+    pheromone_reinforcement: int,
 ):
     n = len(processing_times)
     pheromones = [[1.0] * n for _ in range(n)]
@@ -66,7 +78,7 @@ def ant_colony_alg(
                         chosen = job
                         break
 
-                if chosen:
+                if chosen is not None:
                     perm.append(chosen)
                     unvisited.remove(chosen)
 
@@ -93,24 +105,24 @@ def ant_colony_alg(
 if __name__ == "__main__":
     rnd = RandomNumberGenerator(735864)
 
-    number_of_items = 8
-    number_of_machines = 8
-    items = np.array(
+    # rows (inner lists) - jobs; columns (inner list's items) - machines
+    processing_times = np.array(
         [
-            [rnd.nextInt(1, 35) for _ in range(number_of_machines)]
-            for _ in range(number_of_items)
+            [rnd.nextInt(1, 35) for _ in range(NUMBER_OF_MACHINES)]
+            for _ in range(NUMBER_OF_JOBS)
         ]
     )
 
-    solution = ant_colony_alg(items, 100, 40, 0.5, 1.0, 0.15, 20)
+    solution = ant_colony_alg(processing_times, 100, 40, 0.5, 1.0, 0.15, 20)
     print(solution[1])
 
-    b = len(items)
+    b = len(processing_times)
     brutelist = list(range(b))
     bruteforce = [list(p) for p in itertools.permutations(brutelist)]
     brute_best = math.inf
+    # Search space is !NUMBER_OF_JOBS (when it's 8 it calculates solution in <1s)
     for permutation in bruteforce:
-        cmax = count_time(items, permutation)
+        cmax = count_time(processing_times, permutation)
         if brute_best > cmax:
             brute_best = cmax
     print("brute best: ", brute_best)
