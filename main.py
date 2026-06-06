@@ -22,6 +22,7 @@ if __name__ == "__main__":
     HEURISTIC_EFFECT = 1.0
     EVAPORATION = 0.15
     PHEROMONE_REINFORCEMENT = 20
+    # ORDER_CONSTRAINTS = [(1, 3), (1, 2)]
 
     NUM_RUNS = 15
     random.seed(42)

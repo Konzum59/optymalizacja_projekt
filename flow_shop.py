@@ -5,7 +5,7 @@ import numpy as np
 import math
 import time
 
-NUMBER_OF_JOBS = 10
+NUMBER_OF_JOBS = 8
 NUMBER_OF_MACHINES = 8
 
 
@@ -33,6 +33,44 @@ def count_time(
     return Cmax
 
 
+def build_dependencies(
+    num_jobs: int, order_constraints: list[tuple[int, int]] | None
+) -> dict[int, set[int]] | None:
+    if order_constraints is None:
+        return None
+    dependencies = {i: set() for i in range(num_jobs)}
+    for before, after in order_constraints:
+        dependencies[after].add(before)
+    return dependencies
+
+
+def get_available_jobs(
+    unvisited: list[int], dependencies: dict[int, set[int]] | None
+) -> list[int]:
+    if dependencies is None:
+        return unvisited
+    unvisited_set = set(unvisited)
+    return [job for job in unvisited if dependencies[job].isdisjoint(unvisited_set)]
+
+
+def generate_valid_permutations(
+    unvisited: list[int],
+    dependencies: dict[int, set[int]] | None,
+    current_perm: list[int] | None = None,
+):
+    if current_perm is None:
+        current_perm = []
+    if not unvisited:
+        yield current_perm
+        return
+
+    for job in get_available_jobs(unvisited, dependencies):
+        next_unvisited = [j for j in unvisited if j != job]
+        yield from generate_valid_permutations(
+            next_unvisited, dependencies, current_perm + [job]
+        )
+
+
 def ant_colony_alg(
     processing_times: np.typing.NDArray[np.int_],
     n_ants: int,
@@ -41,25 +79,31 @@ def ant_colony_alg(
     heuristic_efect: float,
     evaporation: float,
     pheromone_reinforcement: int,
+    order_constraints: list[tuple[int, int]] | None = None,
 ):
     n = len(processing_times)
     pheromones = [[1.0] * n for _ in range(n)]
     best_perm: list[int] | None = None
     best_cmax = math.inf
+
+    # precompute dependencies
+    dependencies = build_dependencies(n, order_constraints)
+
     for _ in range(iterations):
         solutions = []
         for _ in range(n_ants):
             # in the loop single ant constructs the path
             perm: list[int] = []
             unvisited = list(range(n))
-            start = random.choice(unvisited)
+            start = random.choice(get_available_jobs(unvisited, dependencies))
             perm.append(start)
             unvisited.remove(start)
 
             while unvisited:
                 current = perm[-1]
                 probs: list[tuple[int, float]] = []
-                for next_job in unvisited:
+                jobs = get_available_jobs(unvisited, dependencies)
+                for next_job in jobs:
                     # heuristic value favors jobs that have short processing times
                     # on the first machine and the final machine (similarily to Johnson's rule)
                     heuristic = 1.0 / (
@@ -119,12 +163,20 @@ if __name__ == "__main__":
         ]
     )
 
-    solution = ant_colony_alg(processing_times, 100, 40, 0.5, 1.0, 0.15, 20)
-    # print(solution[1])
+    order_constraints = [(1, 3), (4, 6)]
+
+    solution = ant_colony_alg(
+        processing_times, 100, 40, 0.5, 1.0, 0.15, 20, order_constraints
+    )
 
     b = len(processing_times)
     brutelist = list(range(b))
-    bruteforce = [list(p) for p in itertools.permutations(brutelist)]
+    deps = build_dependencies(b, order_constraints)
+    bruteforce = (
+        list(generate_valid_permutations(brutelist, deps))
+        if deps is not None
+        else [list(p) for p in itertools.permutations(brutelist)]
+    )
     brute_best = math.inf
     # Search space is !NUMBER_OF_JOBS (when it's 8 it calculates solution in ~1.7s when bruteforcing)
     start_timestamp = time.perf_counter()
