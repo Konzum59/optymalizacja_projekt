@@ -67,7 +67,7 @@ if __name__ == "__main__":
         ant_ext_results.append(ant_ext_solution[1])
 
         print(
-            f"Run {i+1:02d}/{NUM_RUNS} (Seed {seed:05d}) -> "
+            f"Run {i + 1:02d}/{NUM_RUNS} (Seed {seed:05d}) -> "
             f"Standard: {ant_solution[1]} | Extended: {ant_ext_solution[1]}"
         )
 

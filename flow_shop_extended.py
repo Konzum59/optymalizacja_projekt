@@ -1,17 +1,16 @@
-import random
-import itertools
-from RandomNumberGenerator import RandomNumberGenerator
-import numpy as np
 import math
-import time
+import random
 
-from flow_shop import (
-    count_time,
+import numpy as np
+
+from brute_force_pfssp import brute_force_pfssp
+from RandomNumberGenerator import RandomNumberGenerator
+from utils import (
     NUMBER_OF_JOBS,
     NUMBER_OF_MACHINES,
-    get_available_jobs,
-    generate_valid_permutations,
     build_dependencies,
+    count_time,
+    get_available_jobs,
 )
 
 
@@ -186,22 +185,7 @@ if __name__ == "__main__":
         processing_times, 100, 40, 0.5, 1.0, 0.15, 20, order_constraints
     )
 
-    b = len(processing_times)
-    brutelist = list(range(b))
-    deps = build_dependencies(b, order_constraints)
-    bruteforce = (
-        list(generate_valid_permutations(brutelist, deps))
-        if deps is not None
-        else [list(p) for p in itertools.permutations(brutelist)]
-    )
-    brute_best = math.inf
-    # Search space is !NUMBER_OF_JOBS (when it's 8 it calculates solution in ~1.7s when bruteforcing)
-    start_timestamp = time.perf_counter()
-    for permutation in bruteforce:
-        cmax = count_time(processing_times, permutation)
-        if brute_best > cmax:
-            brute_best = cmax
-    end_timestamp = time.perf_counter()
-    print(end_timestamp - start_timestamp)
+    brute_best = brute_force_pfssp(processing_times, order_constraints)
+
     print("brute best: ", brute_best)
     print("ant best: ", solution[1])
