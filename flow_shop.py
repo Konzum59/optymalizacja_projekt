@@ -5,7 +5,7 @@ import numpy as np
 import math
 import time
 
-NUMBER_OF_JOBS = 8
+NUMBER_OF_JOBS = 10
 NUMBER_OF_MACHINES = 8
 
 
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     )
 
     solution = ant_colony_alg(processing_times, 100, 40, 0.5, 1.0, 0.15, 20)
-    print(solution[1])
+    # print(solution[1])
 
     b = len(processing_times)
     brutelist = list(range(b))
