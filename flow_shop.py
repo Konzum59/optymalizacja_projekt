@@ -3,6 +3,7 @@ import itertools
 from RandomNumberGenerator import RandomNumberGenerator
 import numpy as np
 import math
+import time
 
 NUMBER_OF_JOBS = 8
 NUMBER_OF_MACHINES = 8
@@ -43,11 +44,12 @@ def ant_colony_alg(
 ):
     n = len(processing_times)
     pheromones = [[1.0] * n for _ in range(n)]
-    best_perm = None
+    best_perm: list[int] | None = None
     best_cmax = math.inf
     for _ in range(iterations):
         solutions = []
         for _ in range(n_ants):
+            # in the loop single ant constructs the path
             perm: list[int] = []
             unvisited = list(range(n))
             start = random.choice(unvisited)
@@ -58,11 +60,15 @@ def ant_colony_alg(
                 current = perm[-1]
                 probs: list[tuple[int, float]] = []
                 for next_job in unvisited:
+                    # heuristic value favors jobs that have short processing times
+                    # on the first machine and the final machine (similarily to Johnson's rule)
                     heuristic = 1.0 / (
                         processing_times[next_job][0] + processing_times[next_job][-1]
                     )
 
-                    prob = (pheromones[current][next_job] ** pheromone_efect) * (
+                    pheromone_trail = pheromones[current][next_job]
+
+                    prob = (pheromone_trail**pheromone_efect) * (
                         heuristic**heuristic_efect
                     )
                     probs.append((next_job, prob))
@@ -120,10 +126,14 @@ if __name__ == "__main__":
     brutelist = list(range(b))
     bruteforce = [list(p) for p in itertools.permutations(brutelist)]
     brute_best = math.inf
-    # Search space is !NUMBER_OF_JOBS (when it's 8 it calculates solution in <1s)
+    # Search space is !NUMBER_OF_JOBS (when it's 8 it calculates solution in ~1.7s when bruteforcing)
+    start_timestamp = time.perf_counter()
     for permutation in bruteforce:
         cmax = count_time(processing_times, permutation)
         if brute_best > cmax:
             brute_best = cmax
+
+    end_timestamp = time.perf_counter()
+    print(end_timestamp - start_timestamp)
     print("brute best: ", brute_best)
     print("ant best: ", solution[1])
