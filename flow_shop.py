@@ -1,108 +1,118 @@
-import random
-import itertools
-from RandomNumberGenerator import RandomNumberGenerator
-import numpy as np
 import math
+import random
 
-def count_time(array, permutation):
-    processing_times_array=array[permutation].copy()
-    for row in range(1, number_of_items):
-        processing_times_array[row][0]+=processing_times_array[row-1][0]
-    for col in range(1, number_of_machines):
-            processing_times_array[0][col]+=processing_times_array[0][col-1]
-    for row in range(1 , number_of_items):
-        for col in range(1 ,number_of_machines):
+import numpy as np
 
-            left = processing_times_array[row-1][col]
-            top = processing_times_array[row][col-1]
-            processing_times_array[row][col] += max(top,left)
-    Cmax=processing_times_array.max()
-    return Cmax
+from RandomNumberGenerator import RandomNumberGenerator
+from brute_force_pfssp import brute_force_pfssp
+from utils import (
+    build_dependencies,
+    count_time,
+    get_available_jobs,
+    NUMBER_OF_JOBS,
+    NUMBER_OF_MACHINES,
+)
 
-def ant_colony_alg(processing_times, n_ants, iterations, pheromone_efect, heuristic_efect, evaporation, pheromone_reinforcement):
-    n=len(processing_times)
-    pheromones = [[1.0]* n for _ in range(n)]
-    best_perm=None
+
+def ant_colony_alg(
+    processing_times: np.typing.NDArray[np.int_],
+    n_ants: int,
+    iterations: int,
+    pheromone_efect: float,
+    heuristic_efect: float,
+    evaporation: float,
+    pheromone_reinforcement: int,
+    order_constraints: list[tuple[int, int]] | None = None,
+):
+    n = len(processing_times)
+    pheromones = [[1.0] * n for _ in range(n)]
+    best_perm: list[int] | None = None
     best_cmax = math.inf
-    for iter in range(iterations):
-        solutions=[]
-        for ant in range(n_ants):
-            perm=[]
+
+    # precompute dependencies
+    dependencies = build_dependencies(n, order_constraints)
+
+    for _ in range(iterations):
+        solutions = []
+        for _ in range(n_ants):
+            # in the loop single ant constructs the path
+            perm: list[int] = []
             unvisited = list(range(n))
-            start = random.choice(unvisited)
+            start = random.choice(get_available_jobs(unvisited, dependencies))
             perm.append(start)
             unvisited.remove(start)
 
             while unvisited:
-
                 current = perm[-1]
-                probs=[]
-                for next_job in unvisited:
-                    heuristic= 1.0/(processing_times[next_job][0]+processing_times[next_job][-1])
+                probs: list[tuple[int, float]] = []
+                jobs = get_available_jobs(unvisited, dependencies)
+                for next_job in jobs:
+                    # heuristic value favors jobs that have short processing times
+                    # on the first machine and the final machine (similarily to Johnson's rule)
+                    heuristic = 1.0 / (
+                        processing_times[next_job][0] + processing_times[next_job][-1]
+                    )
 
-                    prob=((pheromones[current][next_job]**pheromone_efect)*(heuristic**heuristic_efect))
+                    pheromone_trail = pheromones[current][next_job]
+
+                    prob = (pheromone_trail**pheromone_efect) * (
+                        heuristic**heuristic_efect
+                    )
                     probs.append((next_job, prob))
 
                 total = sum(p for _, p in probs)
-                probs = [(job , p/total) for job, p in probs]
-                cummulative_value=0
+                probs = [(job, p / total) for job, p in probs]
+                cummulative_value = 0
                 chosen = None
-                gambling=random.random()
-                for job,p in probs:
-                    cummulative_value+=p
-                    if gambling<=cummulative_value:
-                        chosen=job
+                gambling = random.random()
+                for job, p in probs:
+                    cummulative_value += p
+                    if gambling <= cummulative_value:
+                        chosen = job
                         break
 
-                perm.append(chosen)
+                if chosen is not None:
+                    perm.append(chosen)
+                    unvisited.remove(chosen)
 
-                unvisited.remove(chosen)
-            cmax=count_time(processing_times, perm)
+            cmax = count_time(processing_times, perm)
             solutions.append((perm, cmax))
-            if cmax<best_cmax:
-                best_perm=perm[:]
-                best_cmax=cmax
+            if cmax < best_cmax:
+                best_perm = perm[:]
+                best_cmax = cmax
 
         for i in range(n):
             for j in range(n):
-                pheromones[i][j]*=(1-evaporation)
+                pheromones[i][j] *= 1 - evaporation
 
-
-        best_in_iter=min(solutions, key=lambda x:x[1])
-        for i in range(n-1):
-            a= best_in_iter[0][i]
-            b= best_in_iter[0][i+1]
-            pheromones[a][b]+=pheromone_reinforcement/best_in_iter[1]
-            #print(pheromone_reinforcement/best_in_iter[1])
-            #print(unvisited)
+        best_in_iter = min(solutions, key=lambda x: x[1])
+        for i in range(n - 1):
+            a = best_in_iter[0][i]
+            b = best_in_iter[0][i + 1]
+            pheromones[a][b] += pheromone_reinforcement / best_in_iter[1]
+            # print(pheromone_reinforcement/best_in_iter[1])
+            # print(unvisited)
     return best_perm, best_cmax
-
-
-
-
-
 
 
 if __name__ == "__main__":
     rnd = RandomNumberGenerator(735864)
 
-    number_of_items=8
-    number_of_machines=8
-    items = np.array([[rnd.nextInt(1, 35) for i in range(number_of_machines)] for j in range(number_of_items)])
+    # rows (inner lists) - jobs; columns (inner list's items) - machines
+    processing_times = np.array(
+        [
+            [rnd.nextInt(1, 35) for _ in range(NUMBER_OF_MACHINES)]
+            for _ in range(NUMBER_OF_JOBS)
+        ]
+    )
 
+    order_constraints = [(1, 3), (4, 6)]
 
+    solution = ant_colony_alg(
+        processing_times, 100, 40, 0.5, 1.0, 0.15, 20, order_constraints
+    )
 
+    brute_best = brute_force_pfssp(processing_times, order_constraints)
 
-    solution=ant_colony_alg(items, 100, 40, 0.5, 1.0, 0.15, 20)
-    print(solution[1])
-
-    b = len(items)
-    brutelist=list(range(b))
-    bruteforce=[list(p) for p in itertools.permutations(brutelist)]
-    brute_best=math.inf
-    for list in bruteforce:
-        cmax=count_time(items,list)
-        if brute_best>cmax:
-            brute_best=cmax
     print("brute best: ", brute_best)
     print("ant best: ", solution[1])
