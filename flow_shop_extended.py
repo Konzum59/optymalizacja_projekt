@@ -215,3 +215,5 @@ if __name__ == "__main__":
 
     print("brute best: ", brute_best)
     print("ant best: ", solution[1])
+    print("constraints: ", order_constraints)
+    print("schedule: ", solution[0])
