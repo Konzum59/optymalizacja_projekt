@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 import random
 
@@ -25,6 +27,7 @@ def ant_colony_alg(
     order_constraints: list[tuple[int, int]] | None = None,
 ):
     n = len(processing_times)
+    job_total_times = np.sum(processing_times, axis=1)
     pheromones = [[1.0] * n for _ in range(n)]
     best_perm: list[int] | None = None
     best_cmax = math.inf
@@ -47,11 +50,8 @@ def ant_colony_alg(
                 probs: list[tuple[int, float]] = []
                 jobs = get_available_jobs(unvisited, dependencies)
                 for next_job in jobs:
-                    # heuristic value favors jobs that have short processing times
-                    # on the first machine and the final machine (similarily to Johnson's rule)
-                    heuristic = 1.0 / (
-                        processing_times[next_job][0] + processing_times[next_job][-1]
-                    )
+
+                    heuristic = 1.0 / job_total_times[next_job]
 
                     pheromone_trail = pheromones[current][next_job]
 

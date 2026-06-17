@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 import random
 
@@ -65,15 +67,18 @@ def ant_colony_alg(
 ):
     # Ant colony algorithm extended by dynamic pheromones (feedback driven strategies rather than time based)
     n = len(processing_times)
+    job_total_times = np.sum(processing_times, axis=1)
     pheromones = [[1.0] * n for _ in range(n)]
     best_perm: list[int] | None = None
     best_cmax = math.inf
+    TAU_MIN = 0.1
+    TAU_MAX = 5.0
     stagnation_counter = 0
 
     dependencies = build_dependencies(n, order_constraints)
 
     for _ in range(iterations):
-        if stagnation_counter > 30:  # hyperparameter
+        if stagnation_counter > iterations // 5:  # hyperparameter
             # pheromone smoothing
             for i in range(n):
                 for j in range(n):
@@ -105,9 +110,7 @@ def ant_colony_alg(
                 probs: list[tuple[int, float]] = []
                 jobs = get_available_jobs(unvisited, dependencies)
                 for next_job in jobs:
-                    heuristic = 1.0 / (
-                        processing_times[next_job][0] + processing_times[next_job][-1]
-                    )
+                    heuristic = 1.0 / job_total_times[next_job]
                     pheromone_trail = pheromones[current][next_job]
                     prob = (pheromone_trail**pheromone_efect) * (
                         heuristic**heuristic_efect
@@ -140,15 +143,36 @@ def ant_colony_alg(
             max(actual_evaporation, 0.02), 0.25
         )  # 0.2 and 0.25 - hyperparameters
 
+        #added limitation to pheromone value
         for i in range(n):
             for j in range(n):
                 pheromones[i][j] *= 1 - actual_evaporation
-
+                pheromones[i][j] =min(TAU_MAX, pheromones[i][j])
         best_in_iter = min(solutions, key=lambda x: x[1])
+
+        best_local_perm = best_in_iter[0].copy()
+        best_local_cmax = best_in_iter[1]
+
+        for i in range(n):
+            for j in range(i + 1, n):
+                candidate = best_local_perm.copy()
+                candidate[i], candidate[j] = candidate[j], candidate[i]
+
+                candidate_cmax = count_time(processing_times, candidate)
+
+                if candidate_cmax < best_local_cmax:
+                    best_local_perm = candidate
+                    best_local_cmax = candidate_cmax
+
+        best_in_iter = (best_local_perm, best_local_cmax)
         for i in range(n - 1):
             a = best_in_iter[0][i]
             b = best_in_iter[0][i + 1]
             pheromones[a][b] += pheromone_reinforcement / best_in_iter[1]
+            pheromones[a][b] = max(
+    TAU_MIN,
+    min(TAU_MAX, pheromones[i][j])
+)
 
         # elitist strategy - reinforce the global best path after each iteration
         # it directs the search of all ants to construct a solution to contain links of the current best path
@@ -157,6 +181,7 @@ def ant_colony_alg(
                 a = best_perm[i]
                 b = best_perm[i + 1]
                 pheromones[a][b] += pheromone_reinforcement / best_cmax
+                pheromones[a][b] = min(TAU_MAX, pheromones[a][b])
 
         if best_in_iter[1] < best_cmax:
             best_perm = best_in_iter[0].copy()
