@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import numpy as np
 
 NUMBER_OF_JOBS = 8
@@ -18,13 +16,14 @@ def count_time(
             and each column represents a successive machine. Specifically, `processing_times[i][j]` is the
             time required to process job `i` on machine `j`.
     """
+    num_jobs, num_machines = processing_times.shape
     scheduled_times = processing_times[permutation].copy()
-    for row in range(1, NUMBER_OF_JOBS):
+    for row in range(1, num_jobs):
         scheduled_times[row][0] += scheduled_times[row - 1][0]
-    for col in range(1, NUMBER_OF_MACHINES):
+    for col in range(1, num_machines):
         scheduled_times[0][col] += scheduled_times[0][col - 1]
-    for row in range(1, NUMBER_OF_JOBS):
-        for col in range(1, NUMBER_OF_MACHINES):
+    for row in range(1, num_jobs):
+        for col in range(1, num_machines):
             left = scheduled_times[row - 1][col]
             top = scheduled_times[row][col - 1]
             scheduled_times[row][col] += max(top, left)
@@ -74,3 +73,16 @@ def generate_valid_permutations(
         yield from generate_valid_permutations(
             next_unvisited, dependencies, current_perm + [job]
         )
+
+
+def is_valid_permutation(
+    permutation: list[int], dependencies: dict[int, set[int]] | None
+) -> bool:
+    if dependencies is None:
+        return True
+    visited = set()
+    for job in permutation:
+        if not dependencies[job].issubset(visited):
+            return False
+        visited.add(job)
+    return True
