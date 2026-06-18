@@ -1,0 +1,54 @@
+[
+    {
+        "scenario": "Small Instance (8x8)",
+        "opt_cmax": 315,
+        "basic": {
+            "best": 315,
+            "worst": 322,
+            "avg": 318.2,
+            "avg_time": 0.5982769399999597,
+            "gap": 1.0158730158730123
+        },
+        "ext": {
+            "best": 315,
+            "worst": 315,
+            "avg": 315.0,
+            "avg_time": 0.7651958399999785,
+            "gap": 0.0
+        }
+    },
+    {
+        "scenario": "Medium Instance (20x10)",
+        "opt_cmax": null,
+        "basic": {
+            "best": 596,
+            "worst": 613,
+            "avg": 604.6,
+            "avg_time": 2.8487251700000344
+        },
+        "ext": {
+            "best": 568,
+            "worst": 586,
+            "avg": 582.1,
+            "avg_time": 4.5356757900001865,
+            "improvement": 3.721468739662587
+        }
+    },
+    {
+        "scenario": "Large Instance (40x20)",
+        "opt_cmax": null,
+        "basic": {
+            "best": 1303,
+            "worst": 1326,
+            "avg": 1318.8,
+            "avg_time": 11.319534120000025
+        },
+        "ext": {
+            "best": 1226,
+            "worst": 1241,
+            "avg": 1235.5,
+            "avg_time": 36.129837210000005,
+            "improvement": 6.316348195329084
+        }
+    }
+]

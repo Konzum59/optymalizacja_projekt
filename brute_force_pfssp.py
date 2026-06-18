@@ -8,7 +8,7 @@ from utils import build_dependencies, count_time, generate_valid_permutations
 
 def brute_force_pfssp(
     processing_times: np.ndarray[tuple[int, int], np.dtype[np.int_]],
-    order_constraints: list[tuple[int, int]],
+    order_constraints: list[tuple[int, int]] | None = None,
 ):
     b = len(processing_times)
     brutelist = list(range(b))

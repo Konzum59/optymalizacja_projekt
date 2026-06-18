@@ -13,6 +13,7 @@ from utils import (
     build_dependencies,
     count_time,
     get_available_jobs,
+    is_valid_permutation,
 )
 
 
@@ -143,11 +144,11 @@ def ant_colony_alg(
             max(actual_evaporation, 0.02), 0.25
         )  # 0.2 and 0.25 - hyperparameters
 
-        #added limitation to pheromone value
+        # added limitation to pheromone value
         for i in range(n):
             for j in range(n):
                 pheromones[i][j] *= 1 - actual_evaporation
-                pheromones[i][j] =min(TAU_MAX, pheromones[i][j])
+                pheromones[i][j] = min(TAU_MAX, pheromones[i][j])
         best_in_iter = min(solutions, key=lambda x: x[1])
 
         best_local_perm = best_in_iter[0].copy()
@@ -157,6 +158,9 @@ def ant_colony_alg(
             for j in range(i + 1, n):
                 candidate = best_local_perm.copy()
                 candidate[i], candidate[j] = candidate[j], candidate[i]
+
+                if not is_valid_permutation(candidate, dependencies):
+                    continue
 
                 candidate_cmax = count_time(processing_times, candidate)
 
@@ -169,10 +173,7 @@ def ant_colony_alg(
             a = best_in_iter[0][i]
             b = best_in_iter[0][i + 1]
             pheromones[a][b] += pheromone_reinforcement / best_in_iter[1]
-            pheromones[a][b] = max(
-    TAU_MIN,
-    min(TAU_MAX, pheromones[i][j])
-)
+            pheromones[a][b] = max(TAU_MIN, min(TAU_MAX, pheromones[a][b]))
 
         # elitist strategy - reinforce the global best path after each iteration
         # it directs the search of all ants to construct a solution to contain links of the current best path
@@ -214,3 +215,5 @@ if __name__ == "__main__":
 
     print("brute best: ", brute_best)
     print("ant best: ", solution[1])
+    print("constraints: ", order_constraints)
+    print("schedule: ", solution[0])
